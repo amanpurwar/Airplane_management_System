@@ -43,11 +43,15 @@ int main(){
 		scanf("%d",&tmp);
 		if(tmp==1){
 			loginCred data;
+			bool verify;
 			printf("Enter the id: ");
 			scanf("%s",data.id);
 			printf("\nEnter the passwd: ");
 			scanf("%s",data.password);
-			
+			verify=verifyCred(data);
+			if(verify==false){
+				printf("")
+			}
 		}	
 	}	
 }
