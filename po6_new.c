@@ -24,9 +24,10 @@ typedef struct dat{
     int dd,mm,yyyy;
 }dateData;
 
-typdef struct tim{
+typedef struct tim{
     int hh,mm,ss;
 }timeData;
+
 typedef struct flightinfo{
     char flightNo[100],source[100],dest[100],stop[100],category,meal;
     int amount;
