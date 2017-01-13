@@ -29,10 +29,11 @@ typedef struct tim{
 }timeData;
 
 typedef struct flightinfo{
-    char flightNo[100],source[100],dest[100],stop[100],category,meal;
-    int amount;
+    char flightNo[100],source[100],destn[100],stop[100],category[100],meal[100],type[100];
+    int amount,seat;//seats avaial
     timeData time;
     dateData date;
+    bool stp;//is there a stop for this flight
 }flightInfo;
 
 typedef struct quer{
@@ -43,8 +44,25 @@ typedef struct quer{
 
 // ####################### administrator functions
 // verify the credentials
-bool verifyCredAdmin(loginCred data){
-
+bool verifyCredAdmin(loginCred cred){
+    FILE *infile;
+    infile = fopen ("adminData1.txt","r");
+    if(infile==NULL){
+        printf("ERROR 404.....\nFile Not Found\n");
+    }
+    adminInfo data;
+    while (fread (&data, sizeof(adminInfo), 1, infile)){
+        printf ("Name = %s   id = %s   email = %s  pass=%s",
+              data.name, data.adminId,data.email,data.password);
+        if(strcmp(data.adminId,cred.id)==0){
+            if(strcmp(data.password,cred.password)==0){
+                printf("found user \n");
+                return true;//credentials match
+            }
+        }
+    }
+    fclose(infile);
+    return false;
 }
 // manage passenger
 void managePass(){
@@ -124,6 +142,61 @@ bool signUpAdmin(){
     fclose(infile);
 `   */
 }
+//add/update flight information
+void editFlightInfo(){
+    printf("########################### \nEdit Flight Information\n");
+    flightInfo data;
+    FILE *outfile;
+    outfile=fopen("flightInfo.txt","a");
+    if(outfile==NULL){
+        outfile=fopen("flightInfo.txt","w");
+    }
+    bool flag=false;
+    char tmp[100];
+    printf("1).Type of flight Intl/Domestic :");
+    scanf("%s",data.type);
+    printf("2).Enter Flight Number :");
+    scanf("%s",data.flightNo);
+    printf("3).Source of Flight :");
+    scanf("%s",data.source);
+    printf("4).Destination of Flight :");
+    scanf("%s",data.destn);
+    printf("5).Is there a stop of this flight enter yes/no :");
+    scanf("%s",tmp);
+    if(strcmp(tmp,"yes")==0){
+        printf("Enter the stop name :");
+        scanf("%s",data.stop);
+        data.stp=true;
+    }
+    else{
+        data.stp=false;//no stop flight
+    }
+    printf("6).Enter date : \nEnter DD(date date): ");
+    scanf("%d",&data.date.dd);
+    printf("Enter MM(month month : ");
+    scanf("%d",&data.date.mm);
+    printf("Enter YYYY(year) : ");
+    scanf("%d",&data.date.yyyy);
+    printf("7).Enter Time : \nEnter HH(hour 24 hr format) : ");
+    scanf("%d",&data.time.hh);
+    printf("Enter mm(minutes) : ");
+    scanf("%d",&data.time.mm);
+    printf("Enter ss(seconds) : ");
+    scanf("%d",&data.time.ss);
+    printf("8).Type of Class :");
+    scanf("%s",data.category);
+    printf("9).Meal : ");
+    scanf("%s",data.meal);
+    printf("10).Enter amount : ");
+    scanf("%d",&data.amount);
+    printf("11).Seats Avaialabe : ");
+    scanf("%d",&data.seat);
+    /*
+        file handling part
+    */
+    fwrite(&data,sizeof(flightInfo),1,outfile);//writing in file
+    printf("Flight Information Updated Succefully...\n");
+}
 //admin SignIn
 bool signInAdmin(){
             loginCred data;
@@ -142,8 +215,8 @@ bool signInAdmin(){
 			}
 			else{
 			    printf("###########################\n");
-                printf("\nLogin Credentials correct , succesful Administrator Login");
-                printf("Select From the menu:\n1).Manage Passengers\n2).Update passenger Status\n3).edit Profile");
+                printf("\nLogin Credentials correct , succesful Administrator Login\n");
+                printf("Select From the menu:\n1).Manage Passengers\n2).Update passenger Status\n3).edit Profile\n4).Edit Flight Information\n");
                 scanf("%d",&tmp);
                 if(tmp==1){
                     managePass();//manage the passengers
@@ -153,7 +226,11 @@ bool signInAdmin(){
                         updatePass();//update the passengers
                     }
                     else{
-                        updateAdminProfile(data);// update admin prfoile data
+                        if(tmp==3)
+                            updateAdminProfile(data);// update admin prfoile data
+                        else{
+                            editFlightInfo();//updating flight Information
+                        }
                     }
                 }
 			}
@@ -165,6 +242,7 @@ bool signInAdmin(){
 // ####################### User functions
 // verify the credentials
 bool verifyCredUser(loginCred data){
+    FILE *infile;
 
 }
 // view flght deatails
