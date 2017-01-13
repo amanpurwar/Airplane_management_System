@@ -7,12 +7,12 @@ static int id=1;//for users while registering
 
 typedef struct admninfo{
 	long long int phone;
-	char adminId[100],name[100],email[100],password[100];
+	char adminId[100],fname[100],lname[100],email[100],password[100];
 }adminInfo;
 
 typedef struct userinfo{
 	long long int phone,passportno;
-	char name[100],email[100],password[100],id[100];
+	char fname[100],lname[100],email[100],password[100],userId[100];
 
 }userInfo;
 
@@ -39,30 +39,41 @@ typedef struct flightinfo{
 typedef struct quer{
     char source[100],dest[100];
     dateData date;
-    timeData time;
+    timeData timeAfter;
+    timeData timeBefore;
 }query;
 
+typedef struct creddata{//used to check if id is matching or passwd or both
+    bool id;
+    bool password;
+}credData;
 // ####################### administrator functions
 // verify the credentials
-bool verifyCredAdmin(loginCred cred){
+credData verifyCredAdmin(loginCred cred){
     FILE *infile;
-    infile = fopen ("adminData1.txt","r");
+    infile = fopen ("adminData2.txt","r");
     if(infile==NULL){
         printf("ERROR 404.....\nFile Not Found\n");
     }
+    credData tmp;
+    tmp.id=false;
+    tmp.password=false;
     adminInfo data;
     while (fread (&data, sizeof(adminInfo), 1, infile)){
-        printf ("Name = %s   id = %s   email = %s  pass=%s",
-              data.name, data.adminId,data.email,data.password);
+        //printf ("Name = %s   id = %s   email = %s  pass=%s",
+        //      data.name, data.adminId,data.email,data.password);      debug line
         if(strcmp(data.adminId,cred.id)==0){
+            tmp.id=true;
             if(strcmp(data.password,cred.password)==0){
-                printf("found user \n");
-                return true;//credentials match
+                //printf("found user \n");
+                 tmp.password=true;//credentials match
+                 fclose(infile);
+                 return tmp;
             }
         }
     }
     fclose(infile);
-    return false;
+    return tmp;
 }
 // manage passenger
 void managePass(){
@@ -82,20 +93,25 @@ bool verifyAdminId(char *id){
 }
 //new admin signup
 bool signUpAdmin(){
+    printf("########################### \nSign Up");
     FILE *outfile,*infile;
-    outfile=fopen("adminData1.txt","a");
+    outfile=fopen("adminData2.txt","a");
     if(outfile==NULL){
-        outfile=fopen("adminData1.txt","w");
+        outfile=fopen("adminData2.txt","w");
     }
     adminInfo data;
     char pass[100]="#",pass2[100]="0",tmpid[100];
-    bool flag=true,verifyid;
+    bool flag=true;
+    credData verifyid;
     while(1){
         printf("1).AdminId : ");
         scanf("%s",tmpid);
-        verifyid=verifyAdminId(tmpid);
-        verifyid=false;
-        if(verifyid==false){
+        loginCred tmpData;
+        strcpy(tmpData.id,tmpid);
+        strcpy(tmpData.password,"");
+        verifyid=verifyCredAdmin(tmpData);
+        //verifyid=false;
+        if(verifyid.id==false){
             strcpy(data.adminId,tmpid);
             printf("id %s \n",data.adminId);
             break;
@@ -104,13 +120,15 @@ bool signUpAdmin(){
             printf("Error... This Id is already taken...Reenter Id\n");
         }
     }
-    printf("2).Name : ");
-    scanf("%s",data.name);
+    printf("2).First Name : ");
+    scanf("%s",data.fname);
+    printf("3).Last Name : ");
+    scanf("%s",data.lname);
     while(strcmp(pass,pass2)!=0){
         if(flag==false){
             printf("Error.. the passwords do not match... \n");
         }
-        printf("3).password : ");
+        printf("4).password : ");
         scanf("%s",pass);
         printf("Reenter password : ");
         scanf("%s",pass2);
@@ -120,9 +138,9 @@ bool signUpAdmin(){
         }
     }
     strcpy(data.password,pass);
-    printf("4).email : ");
+    printf("5).email : ");
     scanf("%s",data.email);
-    printf("5).Phone number : ");
+    printf("6).Phone number : ");
     scanf("%lld",&data.phone);
     /*
         the file handling part
@@ -132,6 +150,7 @@ bool signUpAdmin(){
     fwrite(&data,sizeof(adminInfo),1,outfile);//writing in file
     printf("Updated Information Succesfully......\n");
     fclose(outfile);
+    return true;
     /*infile = fopen ("adminData1.txt","r");
     if(infile==NULL){
         printf("no infile present\n");
@@ -201,7 +220,7 @@ void editFlightInfo(){
 bool signInAdmin(){
             loginCred data;
             int tmp,tmp2;
-			bool verify;
+			credData verify;
 			printf("########################### \nSign In");
 			printf("\nEnter the id for Sign in : ");
 			scanf("%s",data.id);
@@ -209,7 +228,7 @@ bool signInAdmin(){
 			scanf("%s",data.password);
 			//                     printf("%s sca  %s",data.id,data.password);
 			verify=verifyCredAdmin(data);//verifying the credentials
-			if(verify==false){
+			if(verify.password==false){
                  printf("###########################\n");
 				printf("\nIncorrest id / password");
 			}
@@ -241,8 +260,31 @@ bool signInAdmin(){
 
 // ####################### User functions
 // verify the credentials
-bool verifyCredUser(loginCred data){
+credData verifyCredUser(loginCred cred){
     FILE *infile;
+    infile = fopen ("userData2.txt","r");
+    if(infile==NULL){
+        printf("ERROR 404.....\nFile Not Found\n");
+    }
+    credData tmp;
+    tmp.id=false;
+    tmp.password=false;
+    userInfo data;
+    while (fread (&data, sizeof(adminInfo), 1, infile)){
+        //printf ("Name = %s   id = %s   email = %s  pass=%s",
+        //      data.name, data.userId,data.email,data.password);           // debug line
+        if(strcmp(data.userId,cred.id)==0){
+            tmp.id=true;
+            if(strcmp(data.password,cred.password)==0){
+                tmp.password=true;
+                printf("found user \n");
+                fclose(infile);
+                return tmp;//credentials match
+            }
+        }
+    }
+    fclose(infile);
+    return tmp;
 
 }
 // view flght deatails
@@ -261,16 +303,16 @@ void updateUserFile(loginCred data){
 bool signInUser(){
     loginCred data;
     int tmp,tmp2;
-    bool verify;
+    credData verify;
     printf("########################### \nSign In\n");
     printf("\nEnter the id for Sign in : ");
     scanf("%s",data.id);
     printf("\nEnter the password for Sign in : ");
     scanf("%s",data.password);
     verify=verifyCredUser(data);//verifying the credentials
-    if(verify==false){
+    if(verify.password==false){
         printf("###########################\n");
-        printf("\nIncorrect id / password entered");
+        printf("\nIncorrect id / password entered\n");
     }
     else{
         printf("###########################\n");
@@ -300,33 +342,38 @@ bool verifyUserId(char *userId){
 //sign up of new iser
 bool signUpUser(){
     FILE *infile,*outfile;
-    outfile=fopen("userData.txt","a");
+    outfile=fopen("userData2.txt","a");
     if(outfile==NULL){
-        outfile=fopen("userData.txt","w");
+        outfile=fopen("userData2.txt","w");
     }
     userInfo data;
     char pass[100]="#",pass2[100]="0",tmpid[100];
-    bool flag=true,verifyid;
+    bool flag=true;
+    credData verifyid;
+    loginCred tmpData;
     while(1){
-        printf("1).AdminId : ");
+        printf("1).userId : ");
         scanf("%s",tmpid);
-        verifyid=verifyUserId(tmpid);
-        verifyid=false;
-        if(verifyid==false){
-            strcpy(data.id,tmpid);
+        strcpy(tmpData.id,tmpid);
+        strcpy(tmpData.password,"");
+        verifyid=verifyCredUser(tmpData);
+        if(verifyid.id==false){
+            strcpy(data.userId,tmpid);
             break;
         }
         else{
             printf("Error... This Id is already taken...Reenter Id\n");
         }
     }
-    printf("2).Name : ");
-    scanf("%s",data.name);
+    printf("2).First Name : ");
+    scanf("%s",data.fname);
+    printf("3).Last Name : ");
+    scanf("%s",data.lname);
     while(strcmp(pass,pass2)!=0){
         if(flag==false){
             printf("Error.. the passwords do not match... \n");
         }
-        printf("3).password : ");
+        printf("4).password : ");
         scanf("%s",pass);
         printf("Reenter password : ");
         scanf("%s",pass2);
@@ -336,11 +383,11 @@ bool signUpUser(){
         }
     }
     strcpy(data.password,pass);
-    printf("4).email : ");
+    printf("5).email : ");
     scanf("%s",data.email);
-    printf("5).Passport Number : ");
-    scanf("%s",data.passportno);
-    printf("6).Phone Number : ");
+    printf("6).Passport Number : ");
+    scanf("%d",&data.passportno);
+    printf("7).Phone Number : ");
     scanf("%lld",&data.phone);
     /*
         the file handling part
@@ -349,6 +396,7 @@ bool signUpUser(){
     fwrite(&data,sizeof(userInfo),1,outfile);
     printf("Updated Information Succesfully......\n");
     fclose(outfile);
+    return true;
 }
 
 
@@ -357,46 +405,55 @@ bool signUpUser(){
 
 int main(){
 	int tmp,tmp2,i,j;
-	printf("Enter The Category of User :\n");
-	printf("1)Administrator \n2)User\n");
-	scanf("%d",&tmp);
-	// 1 for admin 2 for user
-	if(tmp==1){//*********Administrator
-		printf("###########################\nAdministrative Area\n");
-		printf("Select From the menu:\n1).SignIn\n2).Signup\n");
-		scanf("%d",&tmp);
-		if(tmp==1){
-			signInAdmin();
-		}
-		else{// for new Admin User
-		    printf("###########################\n");
-            printf("Fill the given below details : \n");
-            bool signupVerify=signUpAdmin();//for new user Signup if signup is succeful take to the sign in page
-            //signupVerify=true;
-            if(signupVerify==true){
-                printf("Redeirecting to Sign In page.... \n");
+	printf("Welcome To the Portal\n");
+    while(1){
+        printf("###########################\n");
+        printf("Enter The Category of User :\n");
+        printf("1).Enter as an Administrator \n2).Enter as an User\n3).Not much to do today\n");
+        scanf("%d",&tmp);
+        // 1 for admin 2 for user
+        if(tmp==1){//*********Administrator
+            printf("###########################\nAdministrative Area\n");
+            printf("Select From the menu:\n1).SignIn\n2).Signup\n");
+            scanf("%d",&tmp);
+            if(tmp==1){
                 signInAdmin();
             }
-		}
-	}
-	else{//***************Passenger
-        printf("###########################\nTicket Booking and Cancellation Area\n");
-        printf("Select From the menu:\n1).SignIn\n2).Signup\n");
-        scanf("%d",&tmp);
-        if(tmp==1){
-            signInUser();
+            else{// for new Admin User
+                printf("###########################\n");
+                printf("Fill the given below details : \n");
+                bool signupVerify=signUpAdmin();//for new user Signup if signup is succeful take to the sign in page
+                //signupVerify=true;
+                if(signupVerify==true){
+                    printf("Redeirecting to Sign In page.... \n");
+                    signInAdmin();
+                }
+            }
         }
-        else{//for new User
-            printf("###########################\n");
-            printf("Fill the given below details : \n");
-            bool userVerify=signUpUser();
-            userVerify=true;
-            if(userVerify==true){
-                printf("Redirecting to Sign In Page.... \n");
-                signInUser();
+        else{//***************Passenger
+            if(tmp==2){
+                printf("###########################\nTicket Booking and Cancellation Area\n");
+                printf("Select From the menu:\n1).SignIn\n2).Signup\n");
+                scanf("%d",&tmp);
+                if(tmp==1){
+                    signInUser();
+                }
+                else{//for new User
+                    printf("###########################\n");
+                    printf("Fill the given below details : \n");
+                    bool userVerify=signUpUser();
+                    if(userVerify==true){
+                        printf("Redirecting to Sign In Page.... \n");
+                        signInUser();
+                    }
+
+                }
+            }
+            else{
+                printf("Thank You for Your visit\n");
+                break;
             }
 
         }
-
-	}
+    }
 }
