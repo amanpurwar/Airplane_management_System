@@ -20,11 +20,11 @@ typedef struct logincred{
 	char id[100],password[100];
 }loginCred;
 
-typedef struct dat{
+typedef struct dat{//date
     int dd,mm,yyyy;
 }dateData;
 
-typedef struct tim{
+typedef struct tim{//time
     int hh,mm,ss;
 }timeData;
 
@@ -36,17 +36,34 @@ typedef struct flightinfo{
     bool stp;//is there a stop for this flight
 }flightInfo;
 
-typedef struct quer{
-    char source[100],dest[100];
+typedef struct quer{//query
+    char source[100],dest[100],flightNo[100];
     dateData date;
     timeData timeAfter;
     timeData timeBefore;
+    userInfo userData;
 }query;
 
-typedef struct creddata{//used to check if id is matching or passwd or both
+typedef struct creddata{//used to check if id is matching or passwd or both and also contains
     bool id;
     bool password;
+    userInfo userData;
+    adminInfo adminData;
 }credData;
+
+typedef struct reservationRequestData{// for storing reservation request data
+    char userId[100],flightNo[100],passfname[100],passlname[100],source[100],dest[100],status[100];
+    dateData date;
+    int cost,seat,available,age,passport;
+
+}reserve;
+
+/*typdef struct updateStatus{
+    char userId[100],flightNo[100],passfname[100],passlname[100],source[100],dest[100],status[100];
+    dateData date;
+    int cost,seats,available,age,passport;
+}status;*/
+
 // ####################### administrator functions
 // verify the credentials
 credData verifyCredAdmin(loginCred cred){
@@ -75,13 +92,43 @@ credData verifyCredAdmin(loginCred cred){
     fclose(infile);
     return tmp;
 }
+
+// update passenger reservation
+void updatePassStatus(){
+    FILE *infileRequest,*infileFlight,*outfile;
+    flightInfo flightData;
+    reserve resData;
+    printf("########################### \nPassenger Status Update Started.....\n");
+    infileRequest=fopen("reserveRequest1.txt","r");
+    infileFlight=fopen("flightInfo1.txt","r");
+    outfile=fopen("success.txt","a");
+    if(outfile==NULL){
+        outfile=fopen("success.txt","w");
+    }
+    while(fread (&resData, sizeof(reserve), 1, infileRequest)){
+        printf("%s %s \n",resData.flightNo,resData.passfname);        //debuging code
+        while(fread (&flightData, sizeof(flightInfo), 1, infileFlight)){
+            if(strcmp(flightData.flightNo,resData.flightNo)==0){
+                if(flightData.seat>=resData.seat||true){
+                    strcpy(resData.status,"Success");
+                    //printf("sfvsfg\n");
+                    fwrite(&resData,sizeof(reserve),1,outfile);//writing in file
+                }
+            }
+        }
+    }
+    fclose(outfile);
+    fclose(infileRequest);
+    fclose(infileFlight);
+}
 // manage passenger
 void managePass(){
-
-}
-// update passenger reservation
-void updatePass(){
-
+    printf("###########################\nManage Passengers\n1).Update passenger Status\n2).Exit\n");
+    int tmp;
+    scanf("%d",&tmp);
+    if(tmp==1){
+        updatePassStatus();//update the passengers status
+    }
 }
 // update Profile
 void updateAdminProfile(loginCred data){
@@ -166,9 +213,9 @@ void editFlightInfo(){
     printf("########################### \nEdit Flight Information\n");
     flightInfo data;
     FILE *outfile;
-    outfile=fopen("flightInfo.txt","a");
+    outfile=fopen("flightInfo1.txt","a");
     if(outfile==NULL){
-        outfile=fopen("flightInfo.txt","w");
+        outfile=fopen("flightInfo1.txt","w");
     }
     bool flag=false;
     char tmp[100];
@@ -215,6 +262,7 @@ void editFlightInfo(){
     */
     fwrite(&data,sizeof(flightInfo),1,outfile);//writing in file
     printf("Flight Information Updated Succefully...\n");
+    fclose(outfile);
 }
 //admin SignIn
 bool signInAdmin(){
@@ -235,20 +283,28 @@ bool signInAdmin(){
 			else{
 			    printf("###########################\n");
                 printf("\nLogin Credentials correct , succesful Administrator Login\n");
-                printf("Select From the menu:\n1).Manage Passengers\n2).Update passenger Status\n3).edit Profile\n4).Edit Flight Information\n");
-                scanf("%d",&tmp);
-                if(tmp==1){
-                    managePass();//manage the passengers
-                }
-                else{
-                    if(tmp==2){
-                        updatePass();//update the passengers
+
+                while(1){
+                    printf("###########################\n");
+                    printf("Select From the menu:\n1).Manage Passengers\n2).edit Profile\n3).Edit Flight Information\n4).Exit\n");
+                    scanf("%d",&tmp);
+                    if(tmp==1){
+                        managePass();//manage the passengers
                     }
                     else{
-                        if(tmp==3)
-                            updateAdminProfile(data);// update admin prfoile data
+                        if(tmp==2&&false){
+                            updatePassStatus();//update the passengers
+                        }
                         else{
-                            editFlightInfo();//updating flight Information
+                            if(tmp==2)
+                                updateAdminProfile(data);// update admin prfoile data
+                            else{
+                                if(tmp==3)
+                                    editFlightInfo();//updating flight Information
+                                else{
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
@@ -262,7 +318,7 @@ bool signInAdmin(){
 // verify the credentials
 credData verifyCredUser(loginCred cred){
     FILE *infile;
-    infile = fopen ("userData2.txt","r");
+    infile = fopen ("userData3.txt","r");
     if(infile==NULL){
         printf("ERROR 404.....\nFile Not Found\n");
     }
@@ -270,14 +326,15 @@ credData verifyCredUser(loginCred cred){
     tmp.id=false;
     tmp.password=false;
     userInfo data;
-    while (fread (&data, sizeof(adminInfo), 1, infile)){
-        //printf ("Name = %s   id = %s   email = %s  pass=%s",
-        //      data.name, data.userId,data.email,data.password);           // debug line
+    while (fread (&data, sizeof(userInfo), 1, infile)){
+        //printf ("fName = %s  lname= %s id = %s   email = %s  pass=%s\n",
+            //  data.fname,data.lname, data.userId,data.email,data.password);           // debug line
         if(strcmp(data.userId,cred.id)==0){
             tmp.id=true;
             if(strcmp(data.password,cred.password)==0){
                 tmp.password=true;
-                printf("found user \n");
+                tmp.userData=data;
+                //printf("found user \n");
                 fclose(infile);
                 return tmp;//credentials match
             }
@@ -287,13 +344,186 @@ credData verifyCredUser(loginCred cred){
     return tmp;
 
 }
+//to check if the flight time is in between queried time
+bool timeCheck(timeData flight,timeData after,timeData before){
+    bool flag1=false,flag2=false;
+    if(flight.hh>=after.hh){
+        if(flight.mm>=after.mm){
+            if(flight.ss>=after.ss){
+                flag1=true;
+            }
+        }
+    }
+    if(flight.hh<=before.hh){
+        if(flight.mm<=before.mm){
+            if(flight.ss<=before.ss){
+                flag2=true;
+            }
+        }
+    }
+    if(flag1==true&&flag2==true){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+//
+void reservation(query Query){
+    printf("###########################\nSeat Reservation :\n Enter the details Below :\n");
+    reserve data;
+    FILE *outfile;
+    outfile=fopen("reserveRequest1.txt","a");
+    if(outfile==NULL){
+        outfile=fopen("reserveRequest1.txt","w");
+    }
+    strcpy(data.userId,Query.userData.userId);
+    strcpy(data.source,Query.source);
+    strcpy(data.dest,Query.dest);
+    strcpy(data.flightNo,Query.flightNo);
+    strcpy(data.status,"pending");
+    data.date=Query.date;
+    //printf("Date %d:%d:%d",data.date.dd,data.date.mm,data.date.yyyy);     //debuging
+    printf("1).Passenger First Name : ");
+    scanf("%s",data.passfname);
+    printf("2).Passenger Last Name : ");
+    scanf("%s",data.passlname);
+    printf("3).Passenger Age : ");
+    scanf("%d",&data.age);
+    printf("4).Passenger Passport Number : ");
+    scanf("%d",&data.passport);
+    data.seat=1;
+    fwrite(&data,sizeof(reserve),1,outfile);
+    printf("Reservation Request Done Succesfully......\n");
+    fclose(outfile);
+    FILE *infile = fopen ("reserveRequest1.txt","r");
+    if(infile==NULL){
+        printf("no infile present\n");
+    }                                                                       // debuugging code
+    while (fread (&data, sizeof(reserve), 1, infile))
+      printf ("Name = %s   id = %s   email = %s  pass=%s\n",
+              data.passfname, data.userId,data.passlname,data.flightNo);
+    fclose(infile);
+
+}
 // view flght deatails
-void viewFlight(){
+void viewFlight(loginCred loginData){
+    query Query;
+    flightInfo data;
+    int tmp;
+    bool flag=false;//to check if flight found or not
+    FILE *infile;
+    credData user=verifyCredUser(loginData);
+    infile =fopen("flightInfo1.txt","r");
+    if(infile==NULL){
+        printf("no infile present\n");
+    }
+    printf("1).Enter Source :");
+    scanf("%s",Query.source);
+    printf("2).Enter Destination :");
+    scanf("%s",Query.dest);
+    printf("3).Enter Flight Date : \nEnter DD(date date): ");
+    scanf("%d",&Query.date.dd);
+    printf("Enter MM(month month : ");
+    scanf("%d",&Query.date.mm);
+    printf("Enter YYYY(year) : ");
+    scanf("%d",&Query.date.yyyy);
+    printf("4).Enter the time after which Flight is to seen : \nEnter HH(hour 24 hr format) : ");
+    scanf("%d",&Query.timeAfter.hh);
+    printf("Enter mm(minutes) : ");
+    scanf("%d",&Query.timeAfter.mm);
+    printf("Enter ss(seconds) : ");
+    scanf("%d",&Query.timeAfter.ss);
+    printf("5).Enter the time before which Flight is to seen : \nEnter HH(hour 24 hr format) : ");
+    scanf("%d",&Query.timeBefore.hh);
+    printf("Enter mm(minutes) : ");
+    scanf("%d",&Query.timeBefore.mm);
+    printf("Enter ss(seconds) : ");
+    scanf("%d",&Query.timeBefore.ss);
+    /*
+        File handling part
+
+    */
+    printf("Query Search Completed.....\n");
+    while (fread (&data, sizeof(flightInfo), 1, infile)){
+        //printf("Flight No. : %s , Time(hh:mm:ss) : %d:%d:%d , Flight type : %s , Seats Available : %d , Amount : %d \n",data.flightNo,data.time.hh,data.time.mm,data.time.ss,data.type,data.seat,data.amount);
+        if(strcmp(data.source,Query.source)==0){
+            if(strcmp(data.destn,Query.dest)==0||strcmp(data.stop,Query.dest)==0){
+                if(data.date.yyyy==Query.date.yyyy){
+                    if(data.date.mm==Query.date.mm){
+                        if(data.date.dd==Query.date.dd){
+                            bool timecheck=timeCheck(data.time,Query.timeAfter,Query.timeBefore);
+                            if(timecheck==true){
+                                if(!flag){
+                                    printf("###########################\n");
+                                    printf("The follwing flights were Found : \n");
+                                }
+                                flag=true;
+                                printf("Flight No. : %s , Time(hh:mm:ss) : %d:%d:%d , Flight type : %s , Seats Available : %d , Amount : Rs.%d \n",data.flightNo,data.time.hh,data.time.mm,data.time.ss,data.type,data.seat,data.amount);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if(flag==false){
+        printf("No Flight Found......\n");
+    }
+    fclose(infile);
+    if(flag==true){
+        printf("###########################\n");
+        printf("Select From the Menu :\n");
+        printf("1).Request For Reservation\n2).Exit\n");
+        scanf("%d",&tmp);
+        if(tmp==1){
+            printf("Enter the flight Number : ");
+            char flightNo[100];
+            scanf("%s",flightNo);
+            strcpy(Query.flightNo,flightNo);
+            Query.userData=user.userData;
+            reservation(Query);
+        }
+    }
 
 }
 //
 void ticketStatus(loginCred data){
+    int tmp,tmp2;
+    reserve ticket,latest;
+    bool flag=false;
+    printf("########################### \nPassenger Ticket Status\n");
+    FILE *infile;
+    infile=fopen("success.txt","r");
+    printf("1).Display the confirmation of reservation\n2).Exit\n");
+    scanf("%d",&tmp);
+    if(tmp==1){
+        while(fread (&ticket, sizeof(reserve), 1, infile)){
+                //printf("id : %s ,",ticket.userId);        //debugging
+                if(strcmp(ticket.userId,data.id)==0){
+                    latest=ticket;
+                    flag=true;
+                }
+        }
+        printf("###########################\nConfirmation Status.....\n");
+        if(!flag){
+            printf("The ticket is not yet confirmed by admin..... \n");
+        }
+        else{
 
+            printf("The ticket is Confirmed...\n1).Print ticket\2).Exit\n");
+            scanf("%d",&tmp);
+            if(tmp==1){
+                char uid[100]="";
+                strcat(uid,latest.userId);
+                strcat(uid,latest.flightNo);
+                strcat(uid,latest.source);
+                printf("Ticket Id : %s\tPass. name : %s %s\nFlight No. : %s\tSource : %s\tDest. : %s\n"
+                       ,uid,latest.passfname,latest.passlname,latest.flightNo,latest.source,latest.dest);
+            }
+        }
+    }
+    fclose(infile);
 }
 //
 void updateUserFile(loginCred data){
@@ -304,10 +534,10 @@ bool signInUser(){
     loginCred data;
     int tmp,tmp2;
     credData verify;
-    printf("########################### \nSign In\n");
+    printf("########################### \nUser Sign In\n");
     printf("\nEnter the id for Sign in : ");
     scanf("%s",data.id);
-    printf("\nEnter the password for Sign in : ");
+    printf("Enter the password for Sign in : ");
     scanf("%s",data.password);
     verify=verifyCredUser(data);//verifying the credentials
     if(verify.password==false){
@@ -316,22 +546,29 @@ bool signInUser(){
     }
     else{
         printf("###########################\n");
-        printf("\nLogin Credentials correct , succesful Passenger Login");
-        printf("Select From the menu:\n1).Request to view the available flights as per requirement\n2).Ticket Status\n3).Edit Profile");
-        scanf("%d",&tmp);
-        if(tmp==1){
+        printf("\nLogin Credentials correct , succesful Passenger Login\n");
+        while(1){
             printf("###########################\n");
-            printf("Enter the following details to view flight : \n");
-            viewFlight();
-        }
-        else{
-            if(tmp==2){
+            printf("Select From the menu:\n1).Request to view the available flights as per requirement\n2).Ticket Status\n3).Edit Profile\n4).Exit\n");
+            scanf("%d",&tmp);
+            if(tmp==1){
                 printf("###########################\n");
-                printf("The ticket status\n");
-                ticketStatus(data);
+                printf("Enter the following details to view flight : \n");
+                viewFlight(data);
             }
             else{
-                updateUserFile(data);
+                if(tmp==2){
+                    //printf("###########################\n");
+                    //printf("The ticket status\n");
+                    ticketStatus(data);
+                }
+                else{
+                     if(tmp==3)
+                        updateUserFile(data);
+                     else{
+                        break;
+                     }
+                }
             }
         }
     }
@@ -342,9 +579,9 @@ bool verifyUserId(char *userId){
 //sign up of new iser
 bool signUpUser(){
     FILE *infile,*outfile;
-    outfile=fopen("userData2.txt","a");
+    outfile=fopen("userData3.txt","a");
     if(outfile==NULL){
-        outfile=fopen("userData2.txt","w");
+        outfile=fopen("userData3.txt","w");
     }
     userInfo data;
     char pass[100]="#",pass2[100]="0",tmpid[100];
@@ -396,6 +633,14 @@ bool signUpUser(){
     fwrite(&data,sizeof(userInfo),1,outfile);
     printf("Updated Information Succesfully......\n");
     fclose(outfile);
+    /*infile = fopen ("userData3.txt","r");
+    if(infile==NULL){
+        printf("no infile present\n");
+    }                                                                       // debuugging code
+    while (fread (&data, sizeof(userInfo), 1, infile))
+      printf ("Name = %s   id = %s   email = %s  pass=%s\n",
+              data.fname, data.userId,data.email,data.password);
+    fclose(infile);*/
     return true;
 }
 
