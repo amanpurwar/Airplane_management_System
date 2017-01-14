@@ -84,6 +84,7 @@ credData verifyCredAdmin(loginCred cred){
             if(strcmp(data.password,cred.password)==0){
                 //printf("found user \n");
                  tmp.password=true;//credentials match
+                 tmp.adminData=data;
                  fclose(infile);
                  return tmp;
             }
@@ -325,21 +326,23 @@ credData verifyCredUser(loginCred cred){
     credData tmp;
     tmp.id=false;
     tmp.password=false;
-    userInfo data;
+    userInfo data,last;
     while (fread (&data, sizeof(userInfo), 1, infile)){
         //printf ("fName = %s  lname= %s id = %s   email = %s  pass=%s\n",
             //  data.fname,data.lname, data.userId,data.email,data.password);           // debug line
         if(strcmp(data.userId,cred.id)==0){
             tmp.id=true;
-            if(strcmp(data.password,cred.password)==0){
+            last=data;
+        }
+    }
+    if(strcmp(last.password,cred.password)==0){
                 tmp.password=true;
-                tmp.userData=data;
+                tmp.userData=last;
                 //printf("found user \n");
                 fclose(infile);
                 return tmp;//credentials match
             }
-        }
-    }
+
     fclose(infile);
     return tmp;
 
@@ -525,8 +528,71 @@ void ticketStatus(loginCred data){
     }
     fclose(infile);
 }
-//
+//editing the user data
 void updateUserFile(loginCred data){
+    userInfo old,new;
+    FILE *outfile;
+    bool flag=true;;
+    char tmp[10],pass[100]="0",pass2[100]="43";
+    outfile=fopen("userData3.txt","a");
+    credData user=verifyCredUser(data);
+    old=user.userData;//old user data
+    printf("###########################\nUpdate User Data :\n");
+    printf("UserID : %s\n",old.userId);
+    strcpy(new.userId,old.userId);
+    strcpy(new.fname,old.fname);
+    strcpy(new.lname,old.fname);
+    new.passportno=old.passportno;
+    printf("1).If you want to edit phone number (yes/no) : ");
+    scanf("%s",tmp);
+    if(strcmp(tmp,"yes")==0){
+        printf("Enter the new Number :");
+        scanf("%lld",&new.phone);
+    }
+    else{
+        new.phone=old.phone;
+    }
+    printf("2).If you want to edit email (yes/no) : ");
+    scanf("%s",&tmp);
+    if(strcmp(tmp,"yes")==0){
+        printf("Enter the new email :");
+        scanf("%s",new.email);
+    }
+    else{
+        strcpy(new.email,old.email);
+    }
+    printf("3).If you want to change the password (yes/no) : ");
+    scanf("%s",&tmp);
+    if(strcmp(tmp,"yes")==0){
+        while(strcmp(pass,pass2)!=0){
+            if(flag==false){
+                printf("Error.. the passwords do not match... \n");
+            }
+            printf("Enter the new password :");
+            scanf("%s",pass);
+            printf("Reenter the password : ");
+            scanf("%s",pass2);
+            if(strcmp(pass,pass2)!=0){
+                flag=false;
+
+            }
+        }
+        strcpy(new.password,pass);
+
+    }
+    else{
+        strcpy(new.password,old.password);
+    }
+    printf("Do you want to confrm to update the information ? (yes/no) : ");
+    scanf("%s",tmp);
+    if(strcmp(tmp,"yes")==0){
+        printf("Updating Information.....\n");
+        fwrite(&new,sizeof(userInfo),1,outfile);
+    }
+    else{
+        printf("Cancelling update of information....\n");
+    }
+    fclose(outfile);
 
 }
 //user SignIn
