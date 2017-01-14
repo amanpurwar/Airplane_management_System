@@ -2,6 +2,9 @@
 #include<stdlib.h>
 #include<string.h>
 #include<stdbool.h>
+/*
+    author :aman
+*/
 
 static int id=1;//for users while registering
 
@@ -44,7 +47,7 @@ typedef struct quer{//query
     userInfo userData;
 }query;
 
-typedef struct creddata{//used to check if id is matching or passwd or both and also contains
+typedef struct creddata{//used to check if id is matching or passwd or both and also contains  //amanpurwar
     bool id;
     bool password;
     userInfo userData;
@@ -58,9 +61,13 @@ typedef struct reservationRequestData{// for storing reservation request data
 
 }reserve;
 
+typedef struct cancl{
+    dateData date;
+    char flightNo[100],userId[100];
+}cancel;
 /*typdef struct updateStatus{
     char userId[100],flightNo[100],passfname[100],passlname[100],source[100],dest[100],status[100];
-    dateData date;
+    dateData date;//author :amanpurwar
     int cost,seats,available,age,passport;
 }status;*/
 
@@ -203,7 +210,7 @@ bool signUpAdmin(){
     if(infile==NULL){
         printf("no infile present\n");
     }                                                                       // debuugging code
-    while (fread (&data, sizeof(adminInfo), 1, infile))
+    while (fread (&data, sizeof(adminInfo), 1, infile))//amanpurwar
       printf ("Name = %s   id = %s   email = %s  pass=%s",
               data.name, data.adminId,data.email,data.password);
     fclose(infile);
@@ -490,43 +497,109 @@ void viewFlight(loginCred loginData){
     }
 
 }
-//
+//ticket cancellation
+bool ticketCancel(loginCred data){
+    printf("###########################\nTicket Cancellation\n");
+    printf("Enter the details for ticket cancellation : \n1).FLight Number : ");
+    FILE *outfile;
+    outfile=fopen("cancelList.txt","w");
+    cancel Cancel;
+    char tmp[10];
+    scanf("%s",Cancel.flightNo);
+    printf("2).Enter Date : \n date(dd) : ");
+    scanf("%d",&Cancel.date.dd);
+    printf(" month(MM) : ");
+    scanf("%d",&Cancel.date.mm);
+    printf(" year(yyyy) : ");
+    scanf("%d",&Cancel.date.yyyy);
+    printf("Confimr Cancellation (yes/no) :");
+    scanf("%s",tmp);
+    if(strcmp(tmp,"yes")==0){
+        fwrite(&Cancel,sizeof(cancel),1,outfile);
+        printf("Cancelling the ticket......\n");
+    }
+    fclose(outfile);
+}
+//ticket status and cancelltaion
 void ticketStatus(loginCred data){
     int tmp,tmp2;
     reserve ticket,latest;
-    bool flag=false;
-    printf("########################### \nPassenger Ticket Status\n");
-    FILE *infile;
+    bool flag=false,flag2=false;
+    printf("########################### \nPassenger Ticket Status and Cancellation\n");
+    FILE *infile,*infile2;
     infile=fopen("success.txt","r");
-    printf("1).Display the confirmation of reservation\n2).Exit\n");
+    infile2=fopen("reserveRequest1.txt","r");
+    printf("1).Display the confirmation of the latest reservation\n2).Ticket Cancellation\n3).Booked Ticket History\n4).Exit\n");
     scanf("%d",&tmp);
-    if(tmp==1){
-        while(fread (&ticket, sizeof(reserve), 1, infile)){
-                //printf("id : %s ,",ticket.userId);        //debugging
-                if(strcmp(ticket.userId,data.id)==0){
-                    latest=ticket;
-                    flag=true;
-                }
+
+    if(tmp==1||tmp==2){
+        while(fread (&ticket, sizeof(reserve), 1, infile2)){
+        //printf("id : %s ,",ticket.userId);        //debugging
+            if(strcmp(ticket.userId,data.id)==0){
+                latest=ticket;
+                flag2=true;
+            }
         }
-        printf("###########################\nConfirmation Status.....\n");
-        if(!flag){
-            printf("The ticket is not yet confirmed by admin..... \n");
+        if(flag2==true&&tmp==1){
+            while(fread (&ticket, sizeof(reserve), 1, infile)){
+                    //printf("id : %s ,",ticket.userId);        //debugging
+                    if(strcmp(ticket.userId,data.id)==0){
+                        latest=ticket;
+                        flag=true;
+                    }
+            }
+            printf("###########################\nConfirmation Status.....\n");
+            if(!flag){
+                printf("The ticket is not yet confirmed by admin..... \n");
+            }
+            else{
+
+                printf("The ticket is Confirmed...\n1).Print ticket\n2).Exit\n");
+                scanf("%d",&tmp);
+                if(tmp==1){
+                    char uid[100]="";
+                    strcat(uid,latest.userId);
+                    strcat(uid,latest.flightNo);
+                    strcat(uid,latest.source);
+                    printf("\tTicket Id : %s\tPass. name : %s %s\n\tFlight No. : %s\tSource : %s\tDest. : %s\n"
+                        ,uid,latest.passfname,latest.passlname,latest.flightNo,latest.source,latest.dest);
+                }
+            }
         }
         else{
+            if(flag2==true&&tmp==2){
+                ticketCancel(data);
+            }
+            else
+                printf("No Reservation made yet....\n");
+        }
+    }
+    else{
+        if(tmp==3){
+            while(fread (&ticket, sizeof(reserve), 1, infile2)){
+                        //printf("id : %s ,",ticket.userId);        //debugging
+                        if(strcmp(ticket.userId,data.id)==0){
+                            latest=ticket;
+                            flag2=true;
+                        }
+            }
+            if(flag2==true){
 
-            printf("The ticket is Confirmed...\n1).Print ticket\2).Exit\n");
-            scanf("%d",&tmp);
-            if(tmp==1){
-                char uid[100]="";
-                strcat(uid,latest.userId);
-                strcat(uid,latest.flightNo);
-                strcat(uid,latest.source);
-                printf("Ticket Id : %s\tPass. name : %s %s\nFlight No. : %s\tSource : %s\tDest. : %s\n"
-                       ,uid,latest.passfname,latest.passlname,latest.flightNo,latest.source,latest.dest);
+                    while(fread (&ticket, sizeof(reserve), 1, infile)){
+                        //printf("id : %s ,",ticket.userId);        //debugging
+                        if(strcmp(ticket.userId,data.id)==0){
+                            printf("\tPass. name : %s %s Date: %d:%d:%d\n\tFlight No. : %s\tSource : %s\tDest. : %s\n"
+                        ,ticket.passfname,ticket.passlname,ticket.date.dd,ticket.date.mm,ticket.date.yyyy,ticket.flightNo,ticket.source,ticket.dest);
+                        }
+                    }
+            }
+            else{
+                printf("No ticket booked yet...\n");
             }
         }
     }
     fclose(infile);
+    fclose(infile2);
 }
 //editing the user data
 void updateUserFile(loginCred data){
@@ -595,6 +668,7 @@ void updateUserFile(loginCred data){
     fclose(outfile);
 
 }
+
 //user SignIn
 bool signInUser(){
     loginCred data;
@@ -615,7 +689,7 @@ bool signInUser(){
         printf("\nLogin Credentials correct , succesful Passenger Login\n");
         while(1){
             printf("###########################\n");
-            printf("Select From the menu:\n1).Request to view the available flights as per requirement\n2).Ticket Status\n3).Edit Profile\n4).Exit\n");
+            printf("Select From the menu:\n1).Request to view and book the available flights as per requirement\n2).Ticket Status,History And Cancellation \n3).Edit Profile\n4).Exit\n");
             scanf("%d",&tmp);
             if(tmp==1){
                 printf("###########################\n");
@@ -632,7 +706,11 @@ bool signInUser(){
                      if(tmp==3)
                         updateUserFile(data);
                      else{
-                        break;
+                        if(tmp==4&&false){
+                            ticketCancel(data);
+                        }
+                        else
+                            break;
                      }
                 }
             }
