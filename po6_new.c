@@ -277,7 +277,7 @@ bool signInAdmin(){
             loginCred data;
             int tmp,tmp2;
 			credData verify;
-			printf("########################### \nSign In");
+			printf("########################### \nAdministrator Sign In");
 			printf("\nEnter the id for Sign in : ");
 			scanf("%s",data.id);
 			printf("Enter the password for Sign in : ");
@@ -502,8 +502,12 @@ bool ticketCancel(loginCred data){
     printf("###########################\nTicket Cancellation\n");
     printf("Enter the details for ticket cancellation : \n1).FLight Number : ");
     FILE *outfile;
-    outfile=fopen("cancelList.txt","w");
+    outfile=fopen("cancelList.txt","a");
+    if(outfile==NULL){
+        outfile=fopen("cancelList.txt","w");
+    }
     cancel Cancel;
+    strcpy(Cancel.userId,data.id);
     char tmp[10];
     scanf("%s",Cancel.flightNo);
     printf("2).Enter Date : \n date(dd) : ");
@@ -524,11 +528,13 @@ bool ticketCancel(loginCred data){
 void ticketStatus(loginCred data){
     int tmp,tmp2;
     reserve ticket,latest;
-    bool flag=false,flag2=false;
+    cancel Cancel;
+    bool flag=false,flag2=false,flag1=true;
     printf("########################### \nPassenger Ticket Status and Cancellation\n");
-    FILE *infile,*infile2;
+    FILE *infile,*infile2,*infile3;
     infile=fopen("success.txt","r");
     infile2=fopen("reserveRequest1.txt","r");
+    infile3=fopen("cancelList.txt","r");
     printf("1).Display the confirmation of the latest reservation\n2).Ticket Cancellation\n3).Booked Ticket History\n4).Exit\n");
     scanf("%d",&tmp);
 
@@ -548,21 +554,36 @@ void ticketStatus(loginCred data){
                         flag=true;
                     }
             }
-            printf("###########################\nConfirmation Status.....\n");
+            while(fread (&Cancel, sizeof(cancel), 1, infile3)){
+                //printf("flighr %s  id %s \n",Cancel.flightNo,Cancel.userId);amanpurwar    //debugging
+                if(strcmp(latest.userId,Cancel.userId)==0){
+                    if(strcmp(latest.flightNo,Cancel.flightNo)==0){
+                        if(latest.date.dd==Cancel.date.dd){
+                            flag1=false;
+                        }
+                    }
+                }
+            }
+            fclose(infile3);
+            printf("###########################\nTicket Status.....\n");
             if(!flag){
                 printf("The ticket is not yet confirmed by admin..... \n");
             }
             else{
-
-                printf("The ticket is Confirmed...\n1).Print ticket\n2).Exit\n");
-                scanf("%d",&tmp);
-                if(tmp==1){
-                    char uid[100]="";
-                    strcat(uid,latest.userId);
-                    strcat(uid,latest.flightNo);
-                    strcat(uid,latest.source);
-                    printf("\tTicket Id : %s\tPass. name : %s %s\n\tFlight No. : %s\tSource : %s\tDest. : %s\n"
-                        ,uid,latest.passfname,latest.passlname,latest.flightNo,latest.source,latest.dest);
+                if(flag&&flag1){
+                    printf("The ticket is Confirmed...\n1).Print ticket\n2).Exit\n");
+                    scanf("%d",&tmp);
+                    if(tmp==1){
+                        char uid[100]="";
+                        strcat(uid,latest.userId);
+                        strcat(uid,latest.flightNo);
+                        strcat(uid,latest.source);
+                        printf("\tTicket Id : %s\tPass. name : %s %s\n\tFlight No. : %s\tSource : %s\tDest. : %s\n"
+                            ,uid,latest.passfname,latest.passlname,latest.flightNo,latest.source,latest.dest);
+                    }
+                }
+                else{
+                    printf("The ticket is cancelled by the user....\n");
                 }
             }
         }
@@ -600,6 +621,7 @@ void ticketStatus(loginCred data){
     }
     fclose(infile);
     fclose(infile2);
+
 }
 //editing the user data
 void updateUserFile(loginCred data){
@@ -668,7 +690,6 @@ void updateUserFile(loginCred data){
     fclose(outfile);
 
 }
-
 //user SignIn
 bool signInUser(){
     loginCred data;
