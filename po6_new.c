@@ -68,7 +68,7 @@ typedef struct cancl{
 /*typdef struct updateStatus{
     char userId[100],flightNo[100],passfname[100],passlname[100],source[100],dest[100],status[100];
     dateData date;//author :amanpurwar
-    int cost,seats,available,age,passport;
+    int cost,seats,available,age,passport;//nama
 }status;*/
 
 // ####################### administrator functions
@@ -85,7 +85,7 @@ credData verifyCredAdmin(loginCred cred){
     adminInfo data;
     while (fread (&data, sizeof(adminInfo), 1, infile)){
         //printf ("Name = %s   id = %s   email = %s  pass=%s",
-        //      data.name, data.adminId,data.email,data.password);      debug line
+        //      data.name, data.adminId,data.email,data.password); //nama     //debug line
         if(strcmp(data.adminId,cred.id)==0){
             tmp.id=true;
             if(strcmp(data.password,cred.password)==0){
@@ -108,26 +108,29 @@ void updatePassStatus(){
     reserve resData;
     printf("########################### \nPassenger Status Update Started.....\n");
     infileRequest=fopen("reserveRequest1.txt","r");
-    infileFlight=fopen("flightInfo1.txt","r");
     outfile=fopen("success.txt","a");
     if(outfile==NULL){
         outfile=fopen("success.txt","w");
     }
     while(fread (&resData, sizeof(reserve), 1, infileRequest)){
-        printf("%s %s \n",resData.flightNo,resData.passfname);        //debuging code
+        //printf("%s %s  init\n",resData.flightNo,resData.passfname);
+        infileFlight=fopen("flightInfo1.txt","r");      //debuging code
         while(fread (&flightData, sizeof(flightInfo), 1, infileFlight)){
+            //printf("%s name",flightData.flightNo);
             if(strcmp(flightData.flightNo,resData.flightNo)==0){
                 if(flightData.seat>=resData.seat||true){
                     strcpy(resData.status,"Success");
                     //printf("sfvsfg\n");
+                    //printf("%s %s \n",resData.flightNo,resData.passfname);
                     fwrite(&resData,sizeof(reserve),1,outfile);//writing in file
                 }
             }
         }
+        fclose(infileFlight);
     }
     fclose(outfile);
     fclose(infileRequest);
-    fclose(infileFlight);
+
 }
 // manage passenger
 void managePass(){
@@ -406,14 +409,14 @@ void reservation(query Query){
     fwrite(&data,sizeof(reserve),1,outfile);
     printf("Reservation Request Done Succesfully......\n");
     fclose(outfile);
-    FILE *infile = fopen ("reserveRequest1.txt","r");
+    /*FILE *infile = fopen ("reserveRequest1.txt","r");
     if(infile==NULL){
         printf("no infile present\n");
     }                                                                       // debuugging code
     while (fread (&data, sizeof(reserve), 1, infile))
       printf ("Name = %s   id = %s   email = %s  pass=%s\n",
               data.passfname, data.userId,data.passlname,data.flightNo);
-    fclose(infile);
+    fclose(infile);*/
 
 }
 // view flght deatails
@@ -476,6 +479,27 @@ void viewFlight(loginCred loginData){
                 }
             }
         }
+
+            if(strcmp(data.stop,Query.source)==0){
+                if(strcmp(data.destn,Query.dest)==0){
+                    if(data.date.yyyy==Query.date.yyyy){
+                        if(data.date.mm==Query.date.mm){
+                            if(data.date.dd==Query.date.dd){
+                                bool timecheck=timeCheck(data.time,Query.timeAfter,Query.timeBefore);
+                                if(timecheck==true){
+                                    if(!flag){
+                                        printf("###########################\n");
+                                        printf("The follwing flights were Found : \n");
+                                    }
+                                    flag=true;
+                                    printf("Flight No. : %s , Time(hh:mm:ss) : %d:%d:%d , Flight type : %s , Seats Available : %d , Amount : Rs.%d \n",data.flightNo,data.time.hh,data.time.mm,data.time.ss,data.type,data.seat,data.amount);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
     }
     if(flag==false){
         printf("No Flight Found......\n");
@@ -607,7 +631,7 @@ void ticketStatus(loginCred data){
             if(flag2==true){
 
                     while(fread (&ticket, sizeof(reserve), 1, infile)){
-                        //printf("id : %s ,",ticket.userId);        //debugging
+                        //printf("id : %s ,name %s ",ticket.userId,ticket.passfname);        //debugging
                         if(strcmp(ticket.userId,data.id)==0){
                             printf("\tPass. name : %s %s Date: %d:%d:%d\n\tFlight No. : %s\tSource : %s\tDest. : %s\n"
                         ,ticket.passfname,ticket.passlname,ticket.date.dd,ticket.date.mm,ticket.date.yyyy,ticket.flightNo,ticket.source,ticket.dest);
@@ -630,6 +654,9 @@ void updateUserFile(loginCred data){
     bool flag=true;;
     char tmp[10],pass[100]="0",pass2[100]="43";
     outfile=fopen("userData3.txt","a");
+    if(outfile==NULL){
+        printf("ERROR 404.......User data file not found");
+    }
     credData user=verifyCredUser(data);
     old=user.userData;//old user data
     printf("###########################\nUpdate User Data :\n");
