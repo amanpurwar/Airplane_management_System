@@ -82,20 +82,19 @@ credData verifyCredAdmin(loginCred cred){
     credData tmp;
     tmp.id=false;
     tmp.password=false;
-    adminInfo data;
+    adminInfo data,last;
     while (fread (&data, sizeof(adminInfo), 1, infile)){
         //printf ("Name = %s   id = %s   email = %s  pass=%s",
         //      data.name, data.adminId,data.email,data.password); //nama     //debug line
         if(strcmp(data.adminId,cred.id)==0){
             tmp.id=true;
-            if(strcmp(data.password,cred.password)==0){
+            last=data;
+        }
+    }
+    if(strcmp(last.password,cred.password)==0){
                 //printf("found user \n");
                  tmp.password=true;//credentials match
-                 tmp.adminData=data;
-                 fclose(infile);
-                 return tmp;
-            }
-        }
+                 tmp.adminData=last;
     }
     fclose(infile);
     return tmp;
