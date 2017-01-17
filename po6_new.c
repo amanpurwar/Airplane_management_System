@@ -55,7 +55,7 @@ typedef struct creddata{//used to check if id is matching or passwd or both and 
 }credData;
 
 typedef struct reservationRequestData{// for storing reservation request data
-    char userId[100],flightNo[100],passfname[100],passlname[100],source[100],dest[100],status[100];
+    char userId[100],flightNo[100],passfname[100],passlname[100],source[100],dest[100],status[100],ticketId[100];
     dateData date;
     int cost,seat,available,age,passport;
 
@@ -106,19 +106,22 @@ void updatePassStatus(){
     flightInfo flightData;
     reserve resData;
     printf("########################### \nPassenger Status Update Started.....\n");
-    infileRequest=fopen("reserveRequest1.txt","r");
-    outfile=fopen("success.txt","a");
+    infileRequest=fopen("reserveRequest3.txt","r");
+    outfile=fopen("success1.txt","a");
     if(outfile==NULL){
-        outfile=fopen("success.txt","w");
+        outfile=fopen("success1.txt","w");
     }
     while(fread (&resData, sizeof(reserve), 1, infileRequest)){
-        //printf("%s %s  init\n",resData.flightNo,resData.passfname);
+        printf("%s %s  init\n",resData.flightNo,resData.passfname);
         infileFlight=fopen("flightInfo1.txt","r");      //debuging code
         while(fread (&flightData, sizeof(flightInfo), 1, infileFlight)){
-            //printf("%s name",flightData.flightNo);
+            //printf("%s name %s",flightData.flightNo,flightData.);
             if(strcmp(flightData.flightNo,resData.flightNo)==0){
                 if(flightData.seat>=resData.seat||true){
                     strcpy(resData.status,"Success");
+                    strcat(resData.ticketId,resData.userId);
+                    strcat(resData.ticketId,resData.flightNo);
+                    strcat(resData.ticketId,resData.source);
                     //printf("sfvsfg\n");
                     //printf("%s %s \n",resData.flightNo,resData.passfname);
                     fwrite(&resData,sizeof(reserve),1,outfile);//writing in file
@@ -385,9 +388,9 @@ void reservation(query Query){
     printf("###########################\nSeat Reservation :\n Enter the details Below :\n");
     reserve data;
     FILE *outfile;
-    outfile=fopen("reserveRequest1.txt","a");
+    outfile=fopen("reserveRequest3.txt","a");
     if(outfile==NULL){
-        outfile=fopen("reserveRequest1.txt","w");
+        outfile=fopen("reserveRequest3.txt","w");
     }
     strcpy(data.userId,Query.userData.userId);
     strcpy(data.source,Query.source);
@@ -405,17 +408,18 @@ void reservation(query Query){
     printf("4).Passenger Passport Number : ");
     scanf("%d",&data.passport);
     data.seat=1;
+    strcpy(data.ticketId,"");
     fwrite(&data,sizeof(reserve),1,outfile);
     printf("Reservation Request Done Succesfully......\n");
     fclose(outfile);
-    /*FILE *infile = fopen ("reserveRequest1.txt","r");
+    FILE *infile = fopen ("reserveRequest3.txt","r");
     if(infile==NULL){
         printf("no infile present\n");
     }                                                                       // debuugging code
     while (fread (&data, sizeof(reserve), 1, infile))
-      printf ("Name = %s   id = %s   email = %s  pass=%s\n",
+      printf ("Name = %s   id = %s   passlname = %s  flight=%s\n",
               data.passfname, data.userId,data.passlname,data.flightNo);
-    fclose(infile);*/
+    fclose(infile);
 
 }
 // view flght deatails
@@ -555,8 +559,8 @@ void ticketStatus(loginCred data){
     bool flag=false,flag2=false,flag1=true;
     printf("########################### \nPassenger Ticket Status and Cancellation\n");
     FILE *infile,*infile2,*infile3;
-    infile=fopen("success.txt","r");
-    infile2=fopen("reserveRequest1.txt","r");
+    infile=fopen("success1.txt","r");
+    infile2=fopen("reserveRequest3.txt","r");
     infile3=fopen("cancelList.txt","r");
     printf("1).Display the confirmation of the latest reservation\n2).Ticket Cancellation\n3).Booked Ticket History\n4).Exit\n");
     scanf("%d",&tmp);
@@ -602,7 +606,7 @@ void ticketStatus(loginCred data){
                         strcat(uid,latest.flightNo);
                         strcat(uid,latest.source);
                         printf("\tTicket Id : %s\tPass. name : %s %s\n\tFlight No. : %s\tSource : %s\tDest. : %s\n"
-                            ,uid,latest.passfname,latest.passlname,latest.flightNo,latest.source,latest.dest);
+                            ,latest.ticketId,latest.passfname,latest.passlname,latest.flightNo,latest.source,latest.dest);
                     }
                 }
                 else{
